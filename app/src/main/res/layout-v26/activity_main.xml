@@ -40,7 +40,7 @@
         android:accessibilityLiveRegion="none"
         android:autofillHints=""
         android:ems="10"
-        android:inputType="numberDecimal"
+        android:inputType="numberSigned|number|numberDecimal"
         android:labelFor="@id/textView"
         android:text="0" />
 
@@ -63,7 +63,7 @@
         android:layout_toEndOf="@+id/textView"
         android:ems="10"
         android:importantForAutofill="no"
-        android:inputType="number"
+        android:inputType="numberSigned|number"
         android:text="0" />
 
     <TextView

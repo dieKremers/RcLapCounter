@@ -26,6 +26,7 @@ public class RcLapCounter extends AppCompatActivity {
     int lapCounter = 0;
     int tickTime;
     long lastTimestamp = 0;
+    long deadline;
     Boolean ledState = false;
     String address = null;
     private ProgressDialog progress;
@@ -114,7 +115,7 @@ public class RcLapCounter extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
-                startTraining();      //method to turn on
+                startTraining_ButtonPressed();      //method to turn on
             }
         });
         lapCounter = 0;
@@ -122,21 +123,33 @@ public class RcLapCounter extends AppCompatActivity {
         AsyncTask.execute(lapCounterThread);
     }
 
-    private void startTraining() {
+    private void startTraining_ButtonPressed() {
         if (!active) {
-            //read already sent data from Bluetooth and clear the Queue afterwards
-            readFromBluetooth( 500 );
-            globalReadQueue.clear();
-            resultList.clear();
-            lapCounter = 0;
-            btnStart.setText("STOP TRAINING");
-            active = true;
+            startTraining();
         }
         else
         {
-            active = false;
-            btnStart.setText("START TRAINING");
+            stopTraining();
         }
+    }
+
+    private void stopTraining(){
+        active = false;
+        btnStart.setText("START TRAINING");
+    }
+    private void startTraining()
+    {
+        int mins = Integer.parseInt( minutes.getText().toString() );
+        int secs = Integer.parseInt( seconds.getText().toString() );
+        int milliseconds = (secs*1000) + (mins*60*1000);
+        deadline = System.currentTimeMillis() + milliseconds;
+        //read already sent data from Bluetooth and clear the Queue afterwards
+        readFromBluetooth( 500 );
+        globalReadQueue.clear();
+        resultList.clear();
+        lapCounter = 0;
+        btnStart.setText("STOP TRAINING");
+        active = true;
     }
 
     public void newTimeReceived(){
@@ -155,9 +168,10 @@ public class RcLapCounter extends AppCompatActivity {
             }
             lastTimestamp = time_ms;
             lapCounter++;
+            if( isTimeElapsed() ){
+                stopTraining();
+            }
         }
-
-        //TODO: automatisch stoppen wenn Zeit abgelaufen ist.
     }
 
     private void addNewLap(String text, double time){
@@ -172,17 +186,29 @@ public class RcLapCounter extends AppCompatActivity {
     private final Runnable lapCounterThread = new Runnable() {
         @Override
         public void run() {
+            boolean elapsedNotificationPlayed = false;
             while (true) {
                 if (active) {
-                      if ( readFromBluetooth( 500 ) ){ //newDataReceived) {
+                      if ( readFromBluetooth( 100 ) ){ //newDataReceived) {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     newTimeReceived();
                                 }
                             });
-                        }
+                      }
+                      runOnUiThread(new Runnable() {
+                          @Override
+                          public void run() {
+                              updateTimeView();
+                          }
+                      });
+                      if( !elapsedNotificationPlayed && isTimeElapsed() ){
+                          //TODO Alarm ausgeben
+                      }
+
                 }
+                elapsedNotificationPlayed = true;
                 try {
                     Thread.sleep(tickTime);
                 } catch (InterruptedException e) {
@@ -191,6 +217,7 @@ public class RcLapCounter extends AppCompatActivity {
             }
         }
     };
+
     /**
      * Returns true if new Data was available.
      * Last result in globalReadQueue
@@ -220,6 +247,27 @@ public class RcLapCounter extends AppCompatActivity {
             msg("Error");
         }
         return newDataReceived;
+    }
+
+    private void updateTimeView()
+    {
+        int milliseconds = (int)(deadline - System.currentTimeMillis());
+        String mins = String.valueOf((milliseconds/1000) / 60);
+        String secs = String.valueOf((milliseconds/1000) % 60);
+        minutes.getText().clear();
+        minutes.getText().append(mins);
+        seconds.getText().clear();
+        seconds.getText().append(secs);
+    }
+
+    private boolean isTimeElapsed(){
+        if( active )
+        {
+            if(deadline < System.currentTimeMillis() ){
+                return true;
+            }
+        }
+        return false;
     }
 
     private void Disconnect()
