@@ -1,11 +1,9 @@
 package com.example.rclapcounter;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
-
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -24,6 +22,10 @@ import android.widget.Button;
 
 public class RcLapCounter extends AppCompatActivity {
 
+    Boolean active = false;
+    int lapCounter = 0;
+    int tickTime;
+    long lastTimestamp = 0;
     Boolean ledState = false;
     String address = null;
     private ProgressDialog progress;
@@ -34,8 +36,8 @@ public class RcLapCounter extends AppCompatActivity {
     Button btnStart;
     ListView results;
     EditText minutes, seconds;
-    ArrayList<ResultModel> resultList = new ArrayList<ResultModel>();
-    Queue<String> globalReadQueue = new LinkedList<String>();
+    ArrayList<ResultModel> resultList = new ArrayList<>();
+    Queue<String> globalReadQueue = new LinkedList<>();
 
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
@@ -88,6 +90,7 @@ public class RcLapCounter extends AppCompatActivity {
         }
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -104,6 +107,7 @@ public class RcLapCounter extends AppCompatActivity {
 
         btConnector = new ConnectBT();
         btConnector.execute();
+        tickTime = 100;
 
         btnStart.setOnClickListener(new View.OnClickListener()
         {
@@ -113,27 +117,51 @@ public class RcLapCounter extends AppCompatActivity {
                 startTraining();      //method to turn on
             }
         });
+        lapCounter = 0;
+
+        AsyncTask.execute(lapCounterThread);
     }
 
     private void startTraining() {
-        Integer min, sec;
-        min = Integer.parseInt(minutes.getText().toString());
-        sec = Integer.parseInt(seconds.getText().toString());
-        switchLed();
-        String text = "";
-        if( readFromBluetooth(500) ){
-            text = globalReadQueue.remove();
+        if (!active) {
+            //read already sent data from Bluetooth and clear the Queue afterwards
+            readFromBluetooth( 500 );
+            globalReadQueue.clear();
+            resultList.clear();
+            lapCounter = 0;
+            btnStart.setText("STOP TRAINING");
+            active = true;
         }
-        else{
-            text = "no new data";
+        else
+        {
+            active = false;
+            btnStart.setText("START TRAINING");
         }
-        addNewLap(text,  (min+sec)/60.0);
-        final ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, resultList);
-        results.setAdapter(adapter);
+    }
+
+    public void newTimeReceived(){
+        String text = globalReadQueue.remove();
+        text = text.replaceAll("[^0-9]", "");
+        System.out.println(text);
+        if( text.length() > 3 )
+        {
+            long time_ms = Long.parseLong(text);
+            if( lapCounter > 0 ) //First Time is not a Lap but the initial Start-Time
+            {
+                double time_s = (time_ms - lastTimestamp) / 1000.0;
+                addNewLap("Lap",  time_s);
+                final ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, resultList);
+                results.setAdapter(adapter);
+            }
+            lastTimestamp = time_ms;
+            lapCounter++;
+        }
+
+        //TODO: automatisch stoppen wenn Zeit abgelaufen ist.
     }
 
     private void addNewLap(String text, double time){
-        resultList.add(new ResultModel(text, resultList.size()+1, time));
+        resultList.add(new ResultModel(text, lapCounter, time));
     }
 
     private void msg(String s)
@@ -141,34 +169,32 @@ public class RcLapCounter extends AppCompatActivity {
         Toast.makeText(getApplicationContext(),s,Toast.LENGTH_LONG).show();
     }
 
-    private void switchLed()
-    {
-        if (btSocket!=null)
-        {
-            try
-            {
-                String message;
-                if(ledState==true){
-                    message="0";
-                    ledState = false;
+    private final Runnable lapCounterThread = new Runnable() {
+        @Override
+        public void run() {
+            while (true) {
+                if (active) {
+                      if ( readFromBluetooth( 500 ) ){ //newDataReceived) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    newTimeReceived();
+                                }
+                            });
+                        }
                 }
-                else{
-                    message="1";
-                    ledState = true;
+                try {
+                    Thread.sleep(tickTime);
+                } catch (InterruptedException e) {
+                    msg("Error");
                 }
-                btSocket.getOutputStream().write(message.toString().getBytes());
-            }
-            catch (IOException e)
-            {
-                msg("Error");
             }
         }
-    }
-
+    };
     /**
      * Returns true if new Data was available.
      * Last result in globalReadQueue
-     * @return
+     * @return true if new Data was received
      */
     private boolean readFromBluetooth(int timeout_ms){
         long deadline = System.currentTimeMillis() + timeout_ms;
@@ -177,14 +203,14 @@ public class RcLapCounter extends AppCompatActivity {
             byte[] buffer = new byte[256];
             while( deadline > System.currentTimeMillis() ){
                 int bytes = btSocket.getInputStream().available();
-                while( bytes > 0 ){
-                    bytes = btSocket.getInputStream().read(buffer);            //read bytes from input buffer
-                    globalReadQueue.add( new String(buffer, 0, bytes) );
-                    newDataReceived = true;
-                    Thread.sleep(50);
+                if( bytes > 0 ){
+                    Thread.sleep(100); //wait for complete message to arrive
                     bytes = btSocket.getInputStream().available();
+                    bytes = btSocket.getInputStream().read(buffer);            //read bytes from input buffer
+                    newDataReceived = true;
                 }
                 if( newDataReceived) {
+                    globalReadQueue.add( new String(buffer, 0, bytes) );
                     break;
                 }
             }
