@@ -5,6 +5,12 @@ public class ResultModel {
         int counter;
         double seconds;
 
+        ResultModel(){
+            text = "N/A";
+            counter = -1;
+            seconds = -1.0;
+        }
+
         ResultModel(String text, int counter, double seconds) {
             this.text = text;
             this.counter = counter;
@@ -13,7 +19,8 @@ public class ResultModel {
 
         @Override
         public String toString() {
-            return text + " " + counter + ":\t" + seconds + "s";
+            return String.format("%s %2d:\t%.2f", text, counter, seconds);
+            //return text + " " + counter + ":\t" + seconds + "s";
         }
 
 }

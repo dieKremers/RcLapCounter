@@ -15,7 +15,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.AsyncTask;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
@@ -24,14 +23,12 @@ import android.widget.Button;
 public class RcLapCounter extends AppCompatActivity {
 
     Boolean active = false;
-    int lapCounter = 0;
     int tickTime;
-    long lastTimestamp = 0;
     private long lastRaceStarted;
     long deadline;
+    TrainingResultList results = new TrainingResultList();
     private String originalMinutes;
     private String originalSeconds;
-    Boolean ledState = false;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -39,10 +36,10 @@ public class RcLapCounter extends AppCompatActivity {
     ConnectBT btConnector = null;
     private boolean isBtConnected = false;
     Button btnStart;
-    ListView results;
-    EditText minutes, seconds;
-    TextView lastResultsSummary;
-    ArrayList<ResultModel> resultList = new ArrayList<>();
+    ListView listView_Results;
+    EditText editText_Minutes, editText_Seconds;
+    TextView textView_LastResultsSummary;
+
     Queue<String> globalReadQueue = new LinkedList<>();
 
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -107,10 +104,10 @@ public class RcLapCounter extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         btnStart = findViewById(R.id.buttonStart);
-        results = findViewById(R.id.list_lapTimes);
-        minutes = findViewById(R.id.entry_minutes);
-        seconds = findViewById(R.id.entry_seconds);
-        lastResultsSummary = findViewById(R.id.tvLastResults);
+        listView_Results = findViewById(R.id.list_lapTimes);
+        editText_Minutes = findViewById(R.id.entry_minutes);
+        editText_Seconds = findViewById(R.id.entry_seconds);
+        textView_LastResultsSummary = findViewById(R.id.tvLastResults);
 
         btConnector = new ConnectBT();
         btConnector.execute();
@@ -124,7 +121,6 @@ public class RcLapCounter extends AppCompatActivity {
                 startTraining_ButtonPressed();      //method to turn on
             }
         });
-        lapCounter = 0;
 
         AsyncTask.execute(lapCounterThread);
     }
@@ -144,25 +140,31 @@ public class RcLapCounter extends AppCompatActivity {
         long duration = System.currentTimeMillis() - lastRaceStarted;
         long mins = duration / 1000 / 60;
         long secs = (duration / 1000) % 60;
-        String resultTime = String.format("Time:\t %2d:%2d", mins, secs);
-        String resultLaps = String.format("Laps: %2d", lapCounter);
-        String resultFastesLap = String.format("Fastest Lap:\t ???");
-        String resultString = resultTime+"\n"+resultLaps+"\n"+resultFastesLap;
-        lastResultsSummary.setText(resultString);
+        String resultTime = String.format("Time:\t %2d:%02d min", mins, secs);
+        String resultLaps = String.format("Laps: %2d", results.getNumberOfLaps());
+        String resultFastestLap = String.format("Lap %2d: %.2f sec", results.getFastetLapNumber(), results.getFastestLapTime_sec());
+        String resultString = resultTime+"\n"+resultLaps+"\n"+resultFastestLap;
+        textView_LastResultsSummary.setText(resultString);
+        editText_Minutes.getText().clear();
+        editText_Minutes.getText().append(originalMinutes);
+        editText_Seconds.getText().clear();
+        editText_Seconds.getText().append(originalSeconds);
         btnStart.setText("START");
     }
+
     private void startTraining()
     {
-        int mins = Integer.parseInt( minutes.getText().toString() );
-        int secs = Integer.parseInt( seconds.getText().toString() );
+        originalMinutes = editText_Minutes.getText().toString();
+        originalSeconds = editText_Seconds.getText().toString();
+        int mins = Integer.parseInt( originalMinutes );
+        int secs = Integer.parseInt( originalSeconds );
         int milliseconds = (secs*1000) + (mins*60*1000);
         lastRaceStarted = System.currentTimeMillis();
         deadline =  lastRaceStarted + milliseconds;
         //read already sent data from Bluetooth and clear the Queue afterwards
         readFromBluetooth( 500 );
         globalReadQueue.clear();
-        resultList.clear();
-        lapCounter = 0;
+        results.clear();
         btnStart.setText("STOP");
         active = true;
     }
@@ -174,23 +176,14 @@ public class RcLapCounter extends AppCompatActivity {
         if( text.length() > 3 )
         {
             long time_ms = Long.parseLong(text);
-            if( lapCounter > 0 ) //First Time is not a Lap but the initial Start-Time
-            {
-                double time_s = (time_ms - lastTimestamp) / 1000.0;
-                addNewLap("Lap",  time_s);
-                final ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, resultList);
-                results.setAdapter(adapter);
-            }
-            lastTimestamp = time_ms;
-            lapCounter++;
+            results.notifyCarPassedSensor(time_ms);
+            final ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, results.getResults());
+            listView_Results.setAdapter(adapter);
+            listView_Results.smoothScrollToPosition(adapter.getCount()-1);
             if( isTimeElapsed() ){
                 stopTraining();
             }
         }
-    }
-
-    private void addNewLap(String text, double time){
-        resultList.add(new ResultModel(text, lapCounter, time));
     }
 
     private void msg(String s)
@@ -269,10 +262,10 @@ public class RcLapCounter extends AppCompatActivity {
         int milliseconds = (int)(deadline - System.currentTimeMillis());
         String mins = String.valueOf((milliseconds/1000) / 60);
         String secs = String.valueOf((milliseconds/1000) % 60);
-        minutes.getText().clear();
-        minutes.getText().append(mins);
-        seconds.getText().clear();
-        seconds.getText().append(secs);
+        editText_Minutes.getText().clear();
+        editText_Minutes.getText().append(mins);
+        editText_Seconds.getText().clear();
+        editText_Seconds.getText().append(secs);
     }
 
     private boolean isTimeElapsed(){
