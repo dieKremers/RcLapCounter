@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -26,7 +27,10 @@ public class RcLapCounter extends AppCompatActivity {
     int lapCounter = 0;
     int tickTime;
     long lastTimestamp = 0;
+    private long lastRaceStarted;
     long deadline;
+    private String originalMinutes;
+    private String originalSeconds;
     Boolean ledState = false;
     String address = null;
     private ProgressDialog progress;
@@ -37,6 +41,7 @@ public class RcLapCounter extends AppCompatActivity {
     Button btnStart;
     ListView results;
     EditText minutes, seconds;
+    TextView lastResultsSummary;
     ArrayList<ResultModel> resultList = new ArrayList<>();
     Queue<String> globalReadQueue = new LinkedList<>();
 
@@ -105,6 +110,7 @@ public class RcLapCounter extends AppCompatActivity {
         results = findViewById(R.id.list_lapTimes);
         minutes = findViewById(R.id.entry_minutes);
         seconds = findViewById(R.id.entry_seconds);
+        lastResultsSummary = findViewById(R.id.tvLastResults);
 
         btConnector = new ConnectBT();
         btConnector.execute();
@@ -135,20 +141,29 @@ public class RcLapCounter extends AppCompatActivity {
 
     private void stopTraining(){
         active = false;
-        btnStart.setText("START TRAINING");
+        long duration = System.currentTimeMillis() - lastRaceStarted;
+        long mins = duration / 1000 / 60;
+        long secs = (duration / 1000) % 60;
+        String resultTime = String.format("Time:\t %2d:%2d", mins, secs);
+        String resultLaps = String.format("Laps: %2d", lapCounter);
+        String resultFastesLap = String.format("Fastest Lap:\t ???");
+        String resultString = resultTime+"\n"+resultLaps+"\n"+resultFastesLap;
+        lastResultsSummary.setText(resultString);
+        btnStart.setText("START");
     }
     private void startTraining()
     {
         int mins = Integer.parseInt( minutes.getText().toString() );
         int secs = Integer.parseInt( seconds.getText().toString() );
         int milliseconds = (secs*1000) + (mins*60*1000);
-        deadline = System.currentTimeMillis() + milliseconds;
+        lastRaceStarted = System.currentTimeMillis();
+        deadline =  lastRaceStarted + milliseconds;
         //read already sent data from Bluetooth and clear the Queue afterwards
         readFromBluetooth( 500 );
         globalReadQueue.clear();
         resultList.clear();
         lapCounter = 0;
-        btnStart.setText("STOP TRAINING");
+        btnStart.setText("STOP");
         active = true;
     }
 

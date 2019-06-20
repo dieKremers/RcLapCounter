@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/relativeLayout"
@@ -11,83 +11,122 @@
         android:id="@+id/tvTitle"
         android:layout_width="332dp"
         android:layout_height="42dp"
-        android:layout_marginStart="36dp"
+        android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:text="@string/rc_training_lap_counter"
         android:textColor="#9C27B0"
         android:textSize="30sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_conversion_wrapHeight="110"
+        tools:layout_conversion_wrapWidth="872" />
 
     <Button
         android:id="@+id/buttonStart"
-        android:layout_width="290dp"
-        android:layout_height="45dp"
-        android:layout_below="@+id/entry_seconds"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="44dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginEnd="63dp"
-        android:text="@string/start_training"
-        android:textSize="24sp" />
+        android:layout_width="154dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/btStartText"
+        android:textSize="24sp"
+        app:layout_constraintEnd_toEndOf="@+id/textView2"
+        app:layout_constraintStart_toStartOf="@+id/entry_minutes"
+        app:layout_constraintTop_toBottomOf="@+id/entry_seconds"
+        tools:layout_conversion_wrapHeight="118"
+        tools:layout_conversion_wrapWidth="761"
+        tools:text="@string/btStartText" />
 
     <EditText
         android:id="@+id/entry_minutes"
-        android:layout_width="61dp"
+        android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="44dp"
-        android:layout_marginTop="64dp"
+        android:layout_marginTop="8dp"
         android:accessibilityLiveRegion="none"
         android:autofillHints=""
         android:ems="10"
         android:inputType="numberSigned|number|numberDecimal"
         android:labelFor="@id/textView"
-        android:text="0" />
+        android:text="0"
+        app:layout_constraintStart_toStartOf="@+id/tvTitle"
+        app:layout_constraintTop_toBottomOf="@+id/tvTitle"
+        tools:layout_conversion_wrapHeight="105"
+        tools:layout_conversion_wrapWidth="160" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="19dp"
-        android:layout_marginTop="84dp"
-        android:layout_toEndOf="@+id/entry_minutes"
-        android:text="@string/min" />
+        android:layout_marginBottom="16dp"
+        android:text="@string/min"
+        app:layout_constraintBottom_toBottomOf="@+id/entry_minutes"
+        app:layout_constraintStart_toEndOf="@+id/entry_minutes"
+        tools:layout_conversion_wrapHeight="50"
+        tools:layout_conversion_wrapWidth="73" />
 
     <EditText
         android:id="@+id/entry_seconds"
-        android:layout_width="61dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="61dp"
-        android:layout_marginTop="64dp"
-        android:layout_marginEnd="108dp"
-        android:layout_toEndOf="@+id/textView"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
         android:ems="10"
         android:importantForAutofill="no"
         android:inputType="numberSigned|number"
-        android:text="0" />
+        android:text="0"
+        app:layout_constraintStart_toEndOf="@+id/textView"
+        app:layout_constraintTop_toBottomOf="@+id/tvTitle"
+        tools:layout_conversion_wrapHeight="126"
+        tools:layout_conversion_wrapWidth="160" />
 
     <TextView
         android:id="@+id/textView2"
         android:layout_width="39dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="-70dp"
-        android:layout_marginTop="84dp"
-        android:layout_toEndOf="@+id/entry_seconds"
-        android:text="@string/sec" />
+        android:layout_marginBottom="16dp"
+        android:text="@string/sec"
+        app:layout_constraintBottom_toBottomOf="@+id/entry_seconds"
+        app:layout_constraintStart_toEndOf="@+id/entry_seconds"
+        tools:layout_conversion_wrapHeight="50"
+        tools:layout_conversion_wrapWidth="102" />
 
     <ListView
         android:id="@+id/list_lapTimes"
-        android:layout_width="391dp"
-        android:layout_height="406dp"
-        android:layout_below="@+id/buttonStart"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="38dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="16dp"
+        android:layout_width="379dp"
+        android:layout_height="398dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         android:fadeScrollbars="true"
         android:fastScrollAlwaysVisible="false"
         android:fastScrollEnabled="true"
         android:isScrollContainer="true"
-        android:verticalScrollbarPosition="right" />
+        android:verticalScrollbarPosition="right"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonStart"
+        tools:layout_conversion_wrapHeight="1066"
+        tools:layout_conversion_wrapWidth="1026" />
 
-</RelativeLayout>
+    <TextView
+        android:id="@+id/tvLastResults"
+        android:layout_width="146dp"
+        android:layout_height="58dp"
+        app:layout_constraintBottom_toBottomOf="@+id/buttonStart"
+        app:layout_constraintEnd_toEndOf="@+id/tvLastREsultsTitle"
+        app:layout_constraintStart_toStartOf="@+id/tvLastREsultsTitle"
+        app:layout_constraintTop_toBottomOf="@+id/tvLastREsultsTitle" />
+
+    <TextView
+        android:id="@+id/tvLastREsultsTitle"
+        android:layout_width="143dp"
+        android:layout_height="21dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:text="Last Results"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/textView2"
+        app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

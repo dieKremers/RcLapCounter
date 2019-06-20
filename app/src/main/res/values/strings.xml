@@ -2,8 +2,8 @@
     <string name="app_name">RCLapCounter</string>
     <string name="rc_training_lap_counter">RC Training Lap Counter</string>
     <string name="enter_duration">Enter Duration</string>
-    <string name="start_training">Start Training</string>
     <string name="show_devices">Show Devices</string>
     <string name="sec">sec</string>
     <string name="min">min.</string>
+    <string name="btStartText">START</string>
 </resources>
