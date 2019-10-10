@@ -1,6 +1,8 @@
 package com.example.rclapcounter;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
@@ -39,6 +41,7 @@ public class RcLapCounter extends AppCompatActivity {
     ListView listView_Results;
     EditText editText_Minutes, editText_Seconds;
     TextView textView_LastResultsSummary;
+    MediaPlayer mediaPlayer = null;
 
     Queue<String> globalReadQueue = new LinkedList<>();
 
@@ -127,7 +130,16 @@ public class RcLapCounter extends AppCompatActivity {
 
     private void startTraining_ButtonPressed() {
         if (!active) {
+            //TODO: Countdown
+            mediaPlayer = MediaPlayer.create(this, R.raw.startbeep);
+            mediaPlayer.start(); // no need to call prepare(); create() does that for you
+            while( mediaPlayer.isPlaying() )
+            {
+                // wait until finished
+            }
             startTraining();
+            mediaPlayer.release();
+            mediaPlayer = null;
         }
         else
         {
@@ -150,6 +162,10 @@ public class RcLapCounter extends AppCompatActivity {
         editText_Seconds.getText().clear();
         editText_Seconds.getText().append(originalSeconds);
         btnStart.setText("START");
+        if( mediaPlayer != null ) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 
     private void startTraining()
@@ -212,11 +228,19 @@ public class RcLapCounter extends AppCompatActivity {
                           }
                       });
                       if( !elapsedNotificationPlayed && isTimeElapsed() ){
-                          //TODO Alarm ausgeben
+                          elapsedNotificationPlayed = true;
+                          runOnUiThread(new Runnable() {
+                              @Override
+                              public void run() {
+                                  playTimeElapsedNotification();
+                              }
+                          });
                       }
-
                 }
-                elapsedNotificationPlayed = true;
+                else{
+                    elapsedNotificationPlayed = false;
+                }
+
                 try {
                     Thread.sleep(tickTime);
                 } catch (InterruptedException e) {
@@ -276,6 +300,17 @@ public class RcLapCounter extends AppCompatActivity {
             }
         }
         return false;
+    }
+
+    private void playTimeElapsedNotification()
+    {
+        mediaPlayer = MediaPlayer.create(this, R.raw.timeisover);
+        mediaPlayer.start();
+        while(mediaPlayer.isPlaying()){
+
+        }
+        mediaPlayer.release();
+        mediaPlayer = null;
     }
 
     private void Disconnect()
